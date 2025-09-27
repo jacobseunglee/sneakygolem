@@ -24,17 +24,14 @@ func OpenFile(filename string) (*os.File, error) {
 // 	return string(buffer), nil
 // }
 
-func WriteContentInPosition(content string, filename string, position int) error {
-	file, err := os.OpenFile(filename, os.O_WRONLY, 0644)
+func AppendBytesToFile(data []byte, filename string) error {
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	_, err = file.WriteAt([]byte(content), int64(position))
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err = file.Write(data)
+	return err
 }
 
 // ReadFileBase58 reads the entire file, encodes it in base58, and returns a buffer to read from gradually.
@@ -51,5 +48,6 @@ func ReadFileBase58(filename string) (string, error) {
 	}
 
 	encoded := base58.Encode(data)
+	
 	return encoded, nil
 }

