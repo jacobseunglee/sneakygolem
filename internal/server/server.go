@@ -41,7 +41,6 @@ func handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 		logger.Server.Error("DNS request has no questions")
 		return
 	}
-	sendDNSResponse(w, r)
 	question := r.Question[0]
 	logger.Server.Info("Processing question", "name", question.Name)
 	payload := strings.Split(question.Name, ".")[0] // Remove trailing dot and domain length
@@ -64,7 +63,10 @@ func handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 	// 	}
 	// } else {
 	worker := getOrCreateWorker(packet.ID)
+	worker.mutex.Lock()
+	defer worker.mutex.Unlock()
 	worker.queue <- packet
+	sendDNSResponse(w, r)
 	// }
 }
 
