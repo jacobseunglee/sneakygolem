@@ -83,7 +83,6 @@ func getOrCreateWorker(id string) *Worker {
 		worker = &Worker{
 			queue: make(chan protocol.Packet, protocol.GlobalSettings.MaxCount),
 			file:  fmt.Sprintf("output_%s.txt", id),
-			done:  false,
 		}
 		workers[id] = worker
 		go worker.Run()

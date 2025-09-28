@@ -14,7 +14,6 @@ type Worker struct {
 	queue    chan protocol.Packet
 	file     string
 	received map[int]protocol.Packet
-	done     bool
 	mutex    sync.Mutex
 }
 
@@ -42,6 +41,7 @@ func (w *Worker) Run() {
 		w.mutex.Unlock()
 	}
 	logger.Server.Info("Worker", "file", w.file, "log", "finalizing")
+	w.mutex.Lock()
 	if checkAllRecieved(w.received) {
 		err := w.processAll()
 		if err != nil {
@@ -50,6 +50,7 @@ func (w *Worker) Run() {
 	} else {
 		logger.Server.Error("Worker", "file", w.file, "error", "not all packets received")
 	}
+	w.mutex.Unlock()
 }
 
 func (w *Worker) processAll() error {
