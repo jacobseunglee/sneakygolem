@@ -37,7 +37,7 @@ var GlobalSettings = Settings{}
 func init() {
 	GlobalSettings.IDLen = 16
 	GlobalSettings.CounterLen = 4
-	GlobalSettings.Domain = ".exfil.jacobseunglee.com"
+	GlobalSettings.Domain = ".log.jacobseunglee.com"
 	GlobalSettings.DomainLen = len(GlobalSettings.Domain)
 	GlobalSettings.MaxCount = pow(16, GlobalSettings.CounterLen)
 	logger.Init()

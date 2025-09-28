@@ -5,6 +5,7 @@ import (
 	"sneakygolem/internal/logger"
 	"sneakygolem/internal/protocol"
 	"strings"
+	"sync"
 
 	"github.com/mr-tron/base58"
 )
@@ -14,6 +15,7 @@ type Worker struct {
 	file     string
 	received map[int]protocol.Packet
 	done     bool
+	mutex    sync.Mutex
 }
 
 func checkAllRecieved(received map[int]protocol.Packet) bool {
@@ -35,7 +37,9 @@ func (w *Worker) Run() {
 			break
 		}
 		logger.Server.Info("Worker", "file", w.file, "received packet", packet.Counter)
+		w.mutex.Lock()
 		w.received[packet.Counter] = packet
+		w.mutex.Unlock()
 	}
 	logger.Server.Info("Worker", "file", w.file, "log", "finalizing")
 	if checkAllRecieved(w.received) {
