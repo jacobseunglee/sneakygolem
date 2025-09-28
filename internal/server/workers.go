@@ -19,10 +19,10 @@ type Worker struct {
 }
 
 func checkAllRecieved(received map[int]protocol.Packet) bool {
-	for count := range len(received) {
+	for count := range len(received) - 1 {
 		_, ok := received[count]
 		if !ok {
-			logger.Server.Error("Missing packet", count)
+			logger.Server.Error("Missing packet", "error", fmt.Sprintf("%d", count))
 			return false
 		}
 	}
@@ -31,7 +31,7 @@ func checkAllRecieved(received map[int]protocol.Packet) bool {
 
 func (w *Worker) Run() {
 	w.received = make(map[int]protocol.Packet)
-	for len(w.queue) > 0 && !w.done {
+	for len(w.queue) > 0 || !w.done {
 		packet := <-w.queue
 		if packet.Counter == protocol.GlobalSettings.MaxCount-1 {
 			logger.Server.Info("Worker", "file", w.file, "log", "received finalization packet")
@@ -59,7 +59,7 @@ func (w *Worker) Run() {
 
 func (w *Worker) processAll() error {
 	payload_list := []string{}
-	for count := range len(w.received) {
+	for count := range len(w.received) - 1 {
 		logger.Server.Info("Worker", "file", w.file, "processing packet", count)
 		packet, ok := w.received[count]
 		if !ok {
