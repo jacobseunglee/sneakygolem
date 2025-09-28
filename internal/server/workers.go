@@ -14,6 +14,7 @@ type Worker struct {
 	queue    chan protocol.Packet
 	file     string
 	received map[int]protocol.Packet
+	done     bool
 	mutex    sync.Mutex
 }
 
@@ -21,6 +22,7 @@ func checkAllRecieved(received map[int]protocol.Packet) bool {
 	for count := range len(received) {
 		_, ok := received[count]
 		if !ok {
+			logger.Server.Error("Missing packet", count)
 			return false
 		}
 	}
@@ -29,11 +31,13 @@ func checkAllRecieved(received map[int]protocol.Packet) bool {
 
 func (w *Worker) Run() {
 	w.received = make(map[int]protocol.Packet)
-	for {
+	for len(w.queue) > 0 && !w.done {
 		packet := <-w.queue
 		if packet.Counter == protocol.GlobalSettings.MaxCount-1 {
 			logger.Server.Info("Worker", "file", w.file, "log", "received finalization packet")
-			break
+			w.mutex.Lock()
+			w.done = true
+			w.mutex.Unlock()
 		}
 		logger.Server.Info("Worker", "file", w.file, "received packet", packet.Counter)
 		w.mutex.Lock()
