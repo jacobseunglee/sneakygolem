@@ -59,6 +59,8 @@ type Packet struct {
 	Payload string
 }
 
+// Redo this packet section to use struct methods and process things in object oriented way
+
 func DecodePayload(payload string) (Packet, error) {
 	id := payload[:GlobalSettings.IDLen]
 	count := payload[GlobalSettings.IDLen : GlobalSettings.IDLen+GlobalSettings.CounterLen]
@@ -77,7 +79,7 @@ func DecodePayload(payload string) (Packet, error) {
 }
 
 func FinalizePayload(id string) string {
-	return id + "FFFF" + GlobalSettings.Domain
+	return id + fmt.Sprintf("%0*x", GlobalSettings.CounterLen, pow(16, GlobalSettings.CounterLen)-1) + GlobalSettings.Domain
 }
 
 func CreateId() (string, error) {

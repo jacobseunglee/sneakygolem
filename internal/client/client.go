@@ -15,7 +15,7 @@ func queryDNS(host string) ([]string, error) {
 			d := net.Dialer{
 				Timeout: time.Millisecond * time.Duration(10000),
 			}
-			return d.DialContext(ctx, network, "8.8.8.8:53")
+			return d.DialContext(ctx, network, "1.1.1.1:53")
 		},
 	}
 	ips, err := r.LookupHost(context.Background(), host)

@@ -2,8 +2,10 @@ package main
 
 import (
 	"sneakygolem/internal/client"
+	"flag"
 )
 
 func main() {
-	client.Run("test copy.txt")
+	flag.Parse()
+	client.Run(flag.Arg(0))
 }
