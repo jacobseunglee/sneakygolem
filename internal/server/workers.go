@@ -32,14 +32,16 @@ func checkAllRecieved(received map[int]protocol.Packet) bool {
 func (w *Worker) Run() {
 	w.received = make(map[int]protocol.Packet)
 	for len(w.queue) > 0 || !w.done {
+		w.mutex.Lock()
 		packet := <-w.queue
+		w.mutex.Unlock()
 		if packet.Counter == protocol.GlobalSettings.MaxCount-1 {
-			logger.Server.Info("Worker", "file", w.file, "log", "received finalization packet")
+			//logger.Server.Info("Worker", "file", w.file, "log", "received finalization packet")
 			w.mutex.Lock()
 			w.done = true
 			w.mutex.Unlock()
 		}
-		logger.Server.Info("Worker", "file", w.file, "received packet", packet.Counter)
+		//logger.Server.Info("Worker", "file", w.file, "received packet", packet.Counter)
 		w.mutex.Lock()
 		w.received[packet.Counter] = packet
 		w.mutex.Unlock()
@@ -60,7 +62,7 @@ func (w *Worker) Run() {
 func (w *Worker) processAll() error {
 	payload_list := []string{}
 	for count := range len(w.received) - 1 {
-		logger.Server.Info("Worker", "file", w.file, "processing packet", count)
+		//logger.Server.Info("Worker", "file", w.file, "processing packet", count)
 		packet, ok := w.received[count]
 		if !ok {
 			logger.Server.Error("Worker", "file", w.file, "missing packet", count)

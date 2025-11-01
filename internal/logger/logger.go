@@ -11,7 +11,7 @@ var (
 )
 
 func Init() {
-	level := slog.LevelInfo
+	level := slog.LevelError
 
 	Server = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level})).With("component", "server")
 	Client = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level})).With("component", "client")

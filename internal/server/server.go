@@ -36,7 +36,7 @@ func Run() {
 }
 
 func handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
-	logger.Server.Info("Received DNS request", "remote_addr", w.RemoteAddr().String())
+	//logger.Server.Info("Received DNS request", "remote_addr", w.RemoteAddr().String())
 	if len(r.Question) == 0 {
 		logger.Server.Error("DNS request has no questions")
 		return
